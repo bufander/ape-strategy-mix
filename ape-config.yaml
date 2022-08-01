@@ -1,0 +1,28 @@
+name: ape-strategy-mix
+
+plugins:
+  - name: solidity
+  - name: vyper
+  - name: hardhat
+
+default_ecosystem: ethereum
+dependencies:
+  - name: openzeppelin
+    github: OpenZeppelin/openzeppelin-contracts
+    version: 4.6.0
+  # TODO: Use https://github.com/jmonteer/yearn-vaults-v3 when tag available
+  - name: bufander
+    github: bufander/yearn-vaults-v3
+    version: 0.0.1
+
+solidity:
+  import_remapping:
+    - "@openzeppelin/contracts=openzeppelin/v4.6.0"
+    # TODO: Use https://github.com/jmonteer/yearn-vaults-v3 when tag available
+    - "@yearnvaultsv3=bufander/v0.0.1"
+
+ethereum:
+  local:
+    default_provider: hardhat
+
+#test:
