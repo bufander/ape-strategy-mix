@@ -137,3 +137,7 @@ node_modules
 
 .build
 .cache
+
+.env.sh
+
+*lock*
