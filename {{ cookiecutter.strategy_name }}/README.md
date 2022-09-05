@@ -1,4 +1,4 @@
-# {{ cookicutter.strategy_name }}
+# {{ cookiecutter.strategy_name }}
 
     pip install -r requirements-dev.txt
     
