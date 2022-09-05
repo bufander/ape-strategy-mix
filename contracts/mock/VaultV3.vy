@@ -65,8 +65,6 @@ event StrategyReported:
     gain: uint256
     loss: uint256
     current_debt: uint256
-    total_gain: uint256
-    total_loss: uint256
     total_fees: uint256
 
 # DEBT MANAGEMENT EVENTS
@@ -103,8 +101,6 @@ struct StrategyParams:
     last_report: uint256
     current_debt: uint256
     max_debt: uint256
-    total_gain: uint256
-    total_loss: uint256
 
 # CONSTANTS #
 MAX_BPS: constant(uint256) = 10_000
@@ -161,7 +157,6 @@ symbol: public(String[32])
 
 # `nonces` track `permit` approvals with signature.
 nonces: public(HashMap[address, uint256])
-DOMAIN_SEPARATOR: public(bytes32)
 DOMAIN_TYPE_HASH: constant(bytes32) = keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)')
 PERMIT_TYPE_HASH: constant(bytes32) = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)")
 # Timestamp when profits are fully unlocked. Type uint256, as we are making comparison with block.timestamp (uint256)
@@ -188,17 +183,6 @@ def __init__(asset: ERC20, name: String[64], symbol: String[32], role_manager: a
     PROFIT_MAX_UNLOCK_TIME = profit_max_unlock_time
     self.profit_last_update = block.timestamp
     self.profit_end_date = block.timestamp
-
-    # EIP-712
-    self.DOMAIN_SEPARATOR = keccak256(
-        concat(
-            DOMAIN_TYPE_HASH,
-            keccak256(convert("Yearn Vault", Bytes[11])),
-            keccak256(convert(API_VERSION, Bytes[28])),
-            convert(chain.id, bytes32),
-            convert(self, bytes32)
-        )
-    )
 
 ## SHARE MANAGEMENT ##
 ## ERC20 ##
@@ -252,7 +236,7 @@ def _permit(owner: address, spender: address, amount: uint256, expiry: uint256, 
     digest: bytes32 = keccak256(
         concat(
             b'\x19\x01',
-            self.DOMAIN_SEPARATOR,
+            self.domain_separator(),
             keccak256(
                 concat(
                     PERMIT_TYPE_HASH,
@@ -492,10 +476,8 @@ def _add_strategy(new_strategy: address):
       activation: block.timestamp,
       last_report: block.timestamp,
       current_debt: 0,
-      max_debt: 0,
-      total_gain: 0,
-      total_loss: 0
-   })
+      max_debt: 0
+      })
 
    log StrategyAdded(new_strategy)
 
@@ -510,10 +492,8 @@ def _revoke_strategy(old_strategy: address):
       activation: 0,
       last_report: 0,
       current_debt: 0,
-      max_debt: 0,
-      total_gain: 0,
-      total_loss: 0
-   })
+      max_debt: 0
+      })
 
    log StrategyRevoked(old_strategy)
 
@@ -533,10 +513,8 @@ def _migrate_strategy(new_strategy: address, old_strategy: address):
        activation: block.timestamp,
        last_report: block.timestamp,
        current_debt: migrated_strategy.current_debt,
-       max_debt: migrated_strategy.max_debt,
-       total_gain: 0,
-       total_loss: 0
-    })
+       max_debt: migrated_strategy.max_debt
+       })
 
     self._revoke_strategy(old_strategy)
 
@@ -545,10 +523,11 @@ def _migrate_strategy(new_strategy: address, old_strategy: address):
 # DEBT MANAGEMENT #
 # TODO: allow the caller to specify the debt for the strategy, enforcing max_debt
 @internal
-def _update_debt(strategy: address) -> uint256:
+def _update_debt(strategy: address, target_debt: uint256) -> uint256:
     """
-    The vault will rebalance the debt vs its target debt (max_debt). This function will compare the current debt with
-    the target debt and will take funds or deposit new funds to the strategy.
+    The vault will rebalance the debt vs target debt. Target debt must be smaller or equal strategy max_debt.
+    This function will compare the current debt with the target debt and will take funds or deposit new
+    funds to the strategy.
 
     The strategy can require a minimum (or a maximum) amount of funds that it wants to receive to invest.
     The strategy can also reject freeing funds if they are locked.
@@ -557,10 +536,13 @@ def _update_debt(strategy: address) -> uint256:
     """
 
     self._enforce_role(msg.sender, Roles.DEBT_MANAGER)
+
+    new_debt: uint256 = target_debt
+    # Revert if target_debt cannot be achieved due to configured max_debt for given strategy
+    assert new_debt <= self.strategies[strategy].max_debt, "target debt higher than max debt"
+
     # TODO: evaluate consequences of a strategy returning all the funds (including last reported profit) when the profit is not unlocked yet
     current_debt: uint256 = self.strategies[strategy].current_debt
-
-    new_debt: uint256 = self.strategies[strategy].max_debt
 
     if self.shutdown:
         new_debt = 0
@@ -624,6 +606,7 @@ def _update_debt(strategy: address) -> uint256:
         if assets_to_transfer > 0:
             ASSET.approve(strategy, assets_to_transfer)
             IStrategy(strategy).deposit(assets_to_transfer, self)
+            ASSET.approve(strategy, 0)
             self.total_idle -= assets_to_transfer
             self.total_debt_ += assets_to_transfer
 
@@ -684,7 +667,6 @@ def _process_report(strategy: address) -> (uint256, uint256):
 
     # Strategy is reporting a loss
     if loss > 0:
-        self.strategies[strategy].total_loss += loss
         self.strategies[strategy].current_debt -= loss
 
         if loss >= pending_profit:
@@ -707,8 +689,6 @@ def _process_report(strategy: address) -> (uint256, uint256):
             if total_fees > 0:
                 self._issue_shares_for_amount(total_fees, fee_manager)
 
-        # gains are always realized pnl (i.e. not upnl)
-        self.strategies[strategy].total_gain += gain
         # update current debt after processing management fee
         self.strategies[strategy].current_debt += gain
 
@@ -746,15 +726,11 @@ def _process_report(strategy: address) -> (uint256, uint256):
 
     self.strategies[strategy].last_report = block.timestamp
 
-    strategy_params: StrategyParams = self.strategies[strategy]
-    # TODO: replace strategy_params.current_debt with current_debt read above to avoid loading the stuct (when/if we remove total_gain and total_loss)
     log StrategyReported(
         strategy,
         gain,
         loss,
-        strategy_params.current_debt,
-        strategy_params.total_gain,
-        strategy_params.total_loss,
+        self.strategies[strategy].current_debt,
         total_fees
     )
     return (gain, loss)
@@ -890,9 +866,9 @@ def update_max_debt_for_strategy(strategy: address, new_max_debt: uint256):
     log UpdatedMaxDebtForStrategy(msg.sender, strategy, new_max_debt)
 
 @external
-def update_debt(strategy: address) -> uint256:
+def update_debt(strategy: address, target_debt: uint256) -> uint256:
     self._enforce_role(msg.sender, Roles.DEBT_MANAGER)
-    return self._update_debt(strategy)
+    return self._update_debt(strategy, target_debt)
 
 ## EMERGENCY MANAGEMENT ##
 @external
@@ -1047,3 +1023,22 @@ def previewRedeem(shares: uint256) -> uint256:
 @external
 def api_version() -> String[28]:
     return API_VERSION
+
+# eip-1344
+@view
+@internal
+def domain_separator() -> bytes32:
+    return keccak256(
+        concat(
+            DOMAIN_TYPE_HASH,
+            keccak256(convert("Yearn Vault", Bytes[11])),
+            keccak256(convert(API_VERSION, Bytes[28])),
+            convert(chain.id, bytes32),
+            convert(self, bytes32)
+        )
+    )
+
+@view
+@external
+def DOMAIN_SEPARATOR() -> bytes32:
+    return self.domain_separator()

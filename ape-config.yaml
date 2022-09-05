@@ -11,17 +11,17 @@ default_ecosystem: ethereum
 dependencies:
   - name: openzeppelin
     github: OpenZeppelin/openzeppelin-contracts
-    version: 4.6.0
+    version: 4.7.3
   # TODO: Use https://github.com/jmonteer/yearn-vaults-v3 when tag available
   - name: bufander
     github: bufander/yearn-vaults-v3
-    version: 0.0.1
+    version: 0.0.2
 
 solidity:
   import_remapping:
-    - "@openzeppelin/contracts=openzeppelin/v4.6.0"
+    - "@openzeppelin/contracts=openzeppelin/v4.7.3"
     # TODO: Use https://github.com/jmonteer/yearn-vaults-v3 when tag available
-    - "@yearnvaultsv3=bufander/v0.0.1"
+    - "@yearnvaultsv3=bufander/v0.0.2"
 
 ethereum:
   default_network: mainnet-fork

@@ -3,48 +3,38 @@
 pragma solidity 0.8.14;
 pragma experimental ABIEncoderV2;
 
-import {BaseStrategy, IERC20} from "@yearnvaultsv3/test/BaseStrategy.sol";
+import {ERC4626BaseStrategy, IERC20} from "@yearnvaultsv3/test/ERC4626BaseStrategy.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "./interfaces/IVault.sol";
 
 // Import interfaces for many popular DeFi projects, or add your own!
 //import "../interfaces/<protocol>/<Interface>.sol";
 
-contract Strategy is BaseStrategy {
-    string internal strategyName;
-    uint256 public minDebt;
-    uint256 public maxDebt;
+contract Strategy is ERC4626BaseStrategy {
+    using Math for uint256;
 
-    constructor(address _vault, string memory _strategyName)
-        BaseStrategy(_vault)
-    {
-        strategyName = _strategyName;
-    }
+    constructor(
+        address _vault,
+        string memory _strategyName,
+        string memory _strategySymbol
+    )
+        ERC4626BaseStrategy(_vault, IVault(_vault).asset())
+        ERC20(_strategyName, _strategySymbol)
+    {}
 
     // TODO: add comments and functions explanations
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
 
-    function name() external view override returns (string memory) {
-        return strategyName;
-    }
-
-    function setMinDebt(uint256 _minDebt) external {
-        minDebt = _minDebt;
-    }
-
-    function setMaxDebt(uint256 _maxDebt) external {
-        maxDebt = _maxDebt;
-    }
-
-    function investable() external view override returns (uint256, uint256) {
-        return (minDebt, maxDebt);
-    }
-
-    function withdrawable()
-        external
+    function maxDeposit(address receiver)
+        public
         view
+        virtual
         override
-        returns (uint256 _withdrawable)
-    {}
+        returns (uint256 maxAssets)
+    {
+        maxAssets = type(uint256).max;
+    }
 
     function _freeFunds(uint256 _amount)
         internal
@@ -52,28 +42,22 @@ contract Strategy is BaseStrategy {
         returns (uint256 _amountFreed)
     {}
 
-    function totalAssets() external view override returns (uint256) {
+    function totalAssets() public view override returns (uint256) {
         return _totalAssets();
     }
 
     function _totalAssets() internal view returns (uint256) {
-        return 0;
+        return IERC20(asset()).balanceOf(address(this));
     }
-
-    function _emergencyFreeFunds(uint256 _amountToWithdraw) internal override {}
 
     function _invest() internal override {}
 
-    function _harvest() internal override {}
+    function harvestTrigger() public view override returns (bool) {}
 
-    function _migrate(address _newStrategy) internal override {}
-
-    function harvestTrigger() external view override returns (bool) {}
-
-    function investTrigger() external view override returns (bool) {}
+    function investTrigger() public view override returns (bool) {}
 
     function delegatedAssets()
-        external
+        public
         view
         override
         returns (uint256 _delegatedAssets)
