@@ -72,6 +72,17 @@ def vault(gov, asset, create_vault):
 
 
 @pytest.fixture
-def strategy(project, vault, strategist):
-    strategist.deploy(project.Strategy, vault, "TestStrategy")
+def create_strategy(project, strategist):
+    def create_strategy(vault):
+        strategy = strategist.deploy(
+            project.Strategy, vault.address, "strategy_name", "strategy_symbol"
+        )
+        return strategy
+
+    yield create_strategy
+
+
+@pytest.fixture
+def strategy(vault, create_strategy):
+    strategy = create_strategy(vault)
     yield strategy
