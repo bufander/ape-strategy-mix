@@ -1,5 +1,7 @@
 # {{ cookiecutter.strategy_name }}
 
+## How to start
+
     pip install -r requirements-dev.txt
     
     yarn
