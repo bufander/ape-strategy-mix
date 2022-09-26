@@ -5,7 +5,7 @@ Template to start a new Year Vault V3 strategy using [Ape](https://github.com/Ap
 ## How to
 * install ape 
 
-       pip install eth-ape
+       pip install eth-ape>=0.5.1
 
 * install ape plugin template
 

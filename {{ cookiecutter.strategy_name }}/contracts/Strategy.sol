@@ -8,15 +8,13 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import {IERC20, BaseStrategy} from "BaseStrategy.sol";
 
 contract Strategy is BaseStrategy {
-    constructor(
-        address _vault,
-        string memory _strategyName,
-        string memory _strategySymbol
-    ) BaseStrategy(_vault, _name) {}
+    constructor(address _vault, string memory _name)
+        BaseStrategy(_vault, _name)
+    {}
 
     // ******** OVERRIDE METHODS FROM BASE CONTRACT IF NEEDED ************
     // ******** CREATE NEEDED METHODS FOR THE STRATEGY ************
-    function maxWithdraw(address owner) public view virtual returns (uint256) {
+    function maxWithdraw(address owner) public view override returns (uint256) {
         return _totalAssets();
     }
 
