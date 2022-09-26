@@ -1,4 +1,4 @@
-name: ape-strategy-mix
+name: {{ cookiecutter.strategy_name }}
 
 plugins:
   - name: solidity
