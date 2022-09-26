@@ -1,9 +1,10 @@
 from utils import MAX_INT
 
 
-def test_deploy(strategy, vault):
+def test_deploy(strategy, vault, asset):
     assert strategy.name() == "strategy_name"
     assert strategy.vault() == vault.address
+    assert strategy.asset() == asset
 
     assert vault.decimals() == 18
 
@@ -23,6 +24,17 @@ def test_deposit(strategy, vault, asset, gov, amount):
 
     assert strategy.totalAssets() == amount
     assert asset.balanceOf(vault) == 0
+
+
+def test_max_withdraw(strategy, vault, asset, gov, amount):
+    assert strategy.maxWithdraw(vault) == 0
+
+    assert asset.balanceOf(vault) == 0
+    asset.mint(vault, amount, sender=gov)
+    asset.approve(strategy, amount, sender=vault)
+    strategy.deposit(amount, vault, sender=vault)
+
+    assert strategy.maxWithdraw(vault) == amount
 
 
 def test_withdraw(strategy, vault, asset, gov, amount):
