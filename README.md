@@ -1,14 +1,18 @@
-# ape-strategy-mix
-Base repository to develop a Yearn VaultV3 Strategy
+# Ape Strategy Mix Template
 
-    pip install -r requirements-dev.txt
-    
-    yarn
-    
-    ape plugins install .
-    
-    ape compile
-    
-    ape test
-    
-    
+Template to start a new Year Vault V3 strategy using [Ape](https://github.com/ApeWorX/ape). 
+
+## How to
+* install ape 
+
+       pip install eth-ape
+
+* install ape plugin template
+
+       pip install ape-template
+
+* use this repo as template
+
+       ape template  https://github.com/bufander/ape-strategy-mix.git
+
+* start modifiying basic functions on you strategy code
