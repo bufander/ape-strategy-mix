@@ -5,6 +5,8 @@
     pip install -r requirements-dev.txt
     
     yarn
+
+    pip install 'eth-ape>=0.5.1'
     
     ape plugins install .
 
