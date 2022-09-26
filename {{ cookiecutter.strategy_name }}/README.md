@@ -5,11 +5,21 @@
     pip install -r requirements-dev.txt
     
     yarn
+
+    pip install 'eth-ape>=0.5.1'
     
     ape plugins install .
+
+    ape plugins install . --upgrade
     
     ape compile
+
+Create a `.env.sh` file following the `.env.example.sh` format and `source` it:
     
+    source .env.sh
+
+Run tests:
+
     ape test
     
     

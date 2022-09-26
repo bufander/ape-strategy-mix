@@ -3,70 +3,33 @@
 pragma solidity 0.8.14;
 pragma experimental ABIEncoderV2;
 
-import {ERC4626BaseStrategy, IERC20} from "@yearnvaultsv3/test/ERC4626BaseStrategy.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "./interfaces/IVault.sol";
 
-// Import interfaces for many popular DeFi projects, or add your own!
-//import "../interfaces/<protocol>/<Interface>.sol";
+import {IERC20, BaseStrategy} from "BaseStrategy.sol";
 
-contract Strategy is ERC4626BaseStrategy {
-    using Math for uint256;
-
-    constructor(
-        address _vault,
-        string memory _strategyName,
-        string memory _strategySymbol
-    )
-        ERC4626BaseStrategy(_vault, IVault(_vault).asset())
-        ERC20(_strategyName, _strategySymbol)
+contract Strategy is BaseStrategy {
+    constructor(address _vault, string memory _name)
+        BaseStrategy(_vault, _name)
     {}
 
-    // TODO: add comments and functions explanations
-    // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
-
-    function maxDeposit(address receiver)
-        public
-        view
-        virtual
-        override
-        returns (uint256 maxAssets)
-    {
-        maxAssets = type(uint256).max;
-    }
-
-    function _freeFunds(uint256 _amount)
-        internal
-        override
-        returns (uint256 _amountFreed)
-    {}
-
-    function totalAssets() public view override returns (uint256) {
+    // ******** OVERRIDE METHODS FROM BASE CONTRACT IF NEEDED ************
+    // ******** CREATE NEEDED METHODS FOR THE STRATEGY ************
+    function maxWithdraw(address owner) public view override returns (uint256) {
         return _totalAssets();
     }
 
-    function _totalAssets() internal view returns (uint256) {
-        return IERC20(asset()).balanceOf(address(this));
+    function _withdraw(
+        uint256 amount,
+        address receiver,
+        address owner
+    ) internal override returns (uint256) {
+        IERC20(asset).transfer(receiver, amount);
+        return amount;
     }
 
     function _invest() internal override {}
 
-    function harvestTrigger() public view override returns (bool) {}
-
-    function investTrigger() public view override returns (bool) {}
-
-    function delegatedAssets()
-        public
-        view
-        override
-        returns (uint256 _delegatedAssets)
-    {}
-
-    function _protectedTokens()
-        internal
-        view
-        override
-        returns (address[] memory _protected)
-    {}
+    function _totalAssets() internal view override returns (uint256) {
+        return IERC20(asset).balanceOf(address(this));
+    }
 }

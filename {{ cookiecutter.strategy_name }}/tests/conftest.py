@@ -1,13 +1,6 @@
 import pytest
-from ape import Contract
 from enum import IntFlag
-
-# this should be the address of the ERC-20 used by the strategy/vault
-ASSET_ADDRESS = "0x6b175474e89094c44da98b954eedeac495271d0f"  # DAI
-
-MAX_INT = 2**256 - 1
-DAY = 86400
-WEEK = 7 * DAY
+from utils import WEEK, MAX_INT
 
 
 class ROLES(IntFlag):
@@ -19,7 +12,6 @@ class ROLES(IntFlag):
 
 @pytest.fixture(scope="session")
 def gov(accounts):
-    # TODO: can be changed to actual governance
     return accounts[0]
 
 
@@ -33,13 +25,21 @@ def user(accounts):
     return accounts[9]
 
 
-@pytest.fixture(scope="session")
-def asset():
-    yield Contract(ASSET_ADDRESS)
+@pytest.fixture
+def asset(create_token):
+    return create_token("asset")
 
 
-# TODO: deploying vault, as there is no vault yet on mainnet. To be deleted once vault v3 is deployed
-@pytest.fixture(scope="session")
+# use this to create other tokens
+@pytest.fixture
+def create_token(project, gov):
+    def create_token(name, decimals=18):
+        return gov.deploy(project.Token, name, decimals)
+
+    yield create_token
+
+
+@pytest.fixture
 def create_vault(project, gov):
     def create_vault(
         asset,
@@ -47,6 +47,7 @@ def create_vault(project, gov):
         deposit_limit=MAX_INT,
         max_profit_locking_time=WEEK,
     ):
+        # TODO: can we get vault code from a Github tag?¿?
         vault = gov.deploy(
             project.VaultV3, asset, "VaultV3", "AV", governance, max_profit_locking_time
         )
@@ -74,9 +75,7 @@ def vault(gov, asset, create_vault):
 @pytest.fixture
 def create_strategy(project, strategist):
     def create_strategy(vault):
-        strategy = strategist.deploy(
-            project.Strategy, vault.address, "strategy_name", "strategy_symbol"
-        )
+        strategy = strategist.deploy(project.Strategy, vault.address, "strategy_name")
         return strategy
 
     yield create_strategy
@@ -86,3 +85,9 @@ def create_strategy(project, strategist):
 def strategy(vault, create_strategy):
     strategy = create_strategy(vault)
     yield strategy
+
+
+@pytest.fixture
+def amount(asset, vault):
+    # Always work with 1_000
+    return 10 ** (18 + vault.decimals())
