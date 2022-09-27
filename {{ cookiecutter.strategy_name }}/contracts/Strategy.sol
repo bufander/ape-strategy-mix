@@ -14,7 +14,12 @@ contract Strategy is BaseStrategy {
 
     // ******** OVERRIDE METHODS FROM BASE CONTRACT IF NEEDED ************
     // ******** CREATE NEEDED METHODS FOR THE STRATEGY ************
-    function maxWithdraw(address owner) public view override returns (uint256) {
+    function _maxWithdraw(address owner)
+        internal
+        view
+        override
+        returns (uint256)
+    {
         return _totalAssets();
     }
 
@@ -23,7 +28,6 @@ contract Strategy is BaseStrategy {
         address receiver,
         address owner
     ) internal override returns (uint256) {
-        IERC20(asset).transfer(receiver, amount);
         return amount;
     }
 
