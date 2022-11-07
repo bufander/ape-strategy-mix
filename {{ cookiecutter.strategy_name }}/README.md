@@ -14,9 +14,12 @@
     
     ape compile
 
-Create a `.env.sh` file following the `.env.example.sh` format and `source` it:
-    
-    source .env.sh
+Add environmental variables:
+
+    ETHERSCAN_TOKEN
+    WEB3_ALCHEMY_PROJECT_ID
+    WEB3_INFURA_PROJECT_ID
+
 
 Run tests:
 
