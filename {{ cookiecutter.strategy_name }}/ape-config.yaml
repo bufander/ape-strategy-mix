@@ -1,7 +1,7 @@
 name: {{ cookiecutter.strategy_name }}
 
 plugins:
-- name: solidity
+  - name: solidity
   - name: vyper
   - name: etherscan
   - name: hardhat
@@ -9,7 +9,6 @@ plugins:
   - name: alchemy
   - name: infura
 
-default_ecosystem: ethereum
 dependencies:
   - name: openzeppelin
     github: OpenZeppelin/openzeppelin-contracts
@@ -22,9 +21,10 @@ solidity:
   import_remapping:
     - "@openzeppelin/contracts=openzeppelin/v4.7.3"
 
+default_ecosystem: ethereum
+
 ethereum:
-#  local:
-#    default_provider: hardhat
+  default_network: mainnet-fork
   mainnet_fork:
     default_provider: hardhat
 
@@ -33,3 +33,4 @@ hardhat:
     ethereum:
       mainnet:
         upstream_provider: infura
+#        upstream_provider: alchemy
