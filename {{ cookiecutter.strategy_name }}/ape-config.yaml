@@ -3,18 +3,34 @@ name: {{ cookiecutter.strategy_name }}
 plugins:
   - name: solidity
   - name: vyper
+  - name: etherscan
   - name: hardhat
+  - name: foundry
+  - name: alchemy
+  - name: infura
 
-default_ecosystem: ethereum
 dependencies:
   - name: openzeppelin
     github: OpenZeppelin/openzeppelin-contracts
     version: 4.7.3
+  - name: yearn-vaults
+    github: jmonteer/yearn-vaults-v3
+    branch: master
 
 solidity:
   import_remapping:
     - "@openzeppelin/contracts=openzeppelin/v4.7.3"
 
+default_ecosystem: ethereum
+
 ethereum:
-  local:
+  default_network: mainnet-fork
+  mainnet_fork:
     default_provider: hardhat
+
+hardhat:
+  fork:
+    ethereum:
+      mainnet:
+        upstream_provider: infura
+#        upstream_provider: alchemy
