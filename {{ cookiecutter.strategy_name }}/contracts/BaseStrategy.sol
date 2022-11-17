@@ -60,34 +60,29 @@ abstract contract BaseStrategy {
         return assets;
     }
 
-    function maxWithdraw(address owner) public view returns (uint256) {
-        return _maxWithdraw(owner);
+    function maxWithdraw() public view returns (uint256) {
+        return _maxWithdraw();
     }
 
-    function _maxWithdraw(address owner)
+    function _maxWithdraw()
         internal
         view
         virtual
         returns (uint256 withdraw_amount)
     {}
 
-    function withdraw(
-        uint256 amount,
-        address receiver,
-        address owner
-    ) public returns (uint256) {
-        require(msg.sender == owner, "not owner");
-        require(amount <= maxWithdraw(owner), "withdraw more than max");
-        uint256 amount_withdrawn = _withdraw(amount, receiver, owner);
-        IERC20(asset).transfer(receiver, amount_withdrawn);
+    function withdraw(uint256 amount) public returns (uint256) {
+        require(msg.sender == vault && msg.sender == receiver, "not owner");
+        uint256 amount_withdrawn = _withdraw(amount);
+        IERC20(asset).transfer(vault, amount_withdrawn);
         return amount_withdrawn;
     }
 
-    function _withdraw(
-        uint256 amount,
-        address receiver,
-        address owner
-    ) internal virtual returns (uint256 withdraw_amount) {}
+    function _withdraw(uint256 amount)
+        internal
+        virtual
+        returns (uint256 withdraw_amount)
+    {}
 
     function _invest() internal virtual {}
 
