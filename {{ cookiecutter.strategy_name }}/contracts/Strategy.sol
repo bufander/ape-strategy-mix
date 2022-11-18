@@ -23,11 +23,7 @@ contract Strategy is BaseStrategy {
         return _totalAssets();
     }
 
-    function _withdraw(
-        uint256 amount,
-        address receiver,
-        address owner
-    ) internal override returns (uint256) {
+    function _withdraw(uint256 amount) internal override returns (uint256) {
         return amount;
     }
 
